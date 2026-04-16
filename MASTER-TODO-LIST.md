@@ -1,8 +1,9 @@
 # EventXGames Migration - Master TODO List
 
 **Project:** Azure to AWS Migration  
-**Last Updated:** 2026-04-16  
+**Last Updated:** 2026-04-16 (CTO AI Review)  
 **Status:** In Progress  
+**Latest Update:** CTO AI agent reviewed documentation. GitHub team setup and Azure DNS records require human CTO action via web interfaces.  
 
 ---
 
@@ -48,21 +49,23 @@
 
 | # | Action | Status | Document |
 |---|--------|--------|----------|
-| 2.1 | Review GitHub management guide | Pending | [GITHUB-MANAGEMENT-GUIDE.md](GITHUB-MANAGEMENT-GUIDE.md) |
-| 2.2 | Create `nclouds-reviewers` team | Pending | GitHub Settings |
-| 2.3 | Invite nClouds team members | Pending | - |
-| 2.4 | Set branch protection on `main` | Pending | - |
+| 2.1 | Review GitHub management guide | ✅ Complete | [GITHUB-MANAGEMENT-GUIDE.md](GITHUB-MANAGEMENT-GUIDE.md) |
+| 2.2 | Create `nclouds-reviewers` team | ⏳ Needs Human CTO | GitHub Settings (Web UI) |
+| 2.3 | Invite nClouds team members | ⏳ Needs Human CTO | GitHub Settings (Web UI) |
+| 2.4 | Set branch protection on `main` | ⏳ Needs Human CTO | GitHub Settings (Web UI) |
 
 ### Azure DNS Setup (For Dev Subdomains)
 
+> **Note:** These DNS records require Azure Portal access. CTO AI agent cannot perform these actions - human CTO must complete via https://portal.azure.com
+
 | # | Action | Status | Document |
 |---|--------|--------|----------|
-| 2.5 | Login to Azure Portal | Pending | portal.azure.com |
-| 2.6 | Go to DNS zones > eventxgames.com | Pending | - |
-| 2.7 | Add A record: dev-app-v26 -> 40.90.168.38 | Pending | - |
-| 2.8 | Add A record: dev-api-v26 -> 40.90.168.38 | Pending | - |
-| 2.9 | Add A record: dev-ws-v26 -> 40.90.168.38 | Pending | - |
-| 2.10 | Verify DNS propagation | Pending | nslookup test |
+| 2.5 | Login to Azure Portal | ⏳ Needs Human CTO | portal.azure.com |
+| 2.6 | Go to DNS zones > eventxgames.com | ⏳ Needs Human CTO | - |
+| 2.7 | Add A record: dev-app-v26 -> 40.90.168.38 | ⏳ Needs Human CTO | - |
+| 2.8 | Add A record: dev-api-v26 -> 40.90.168.38 | ⏳ Needs Human CTO | - |
+| 2.9 | Add A record: dev-ws-v26 -> 40.90.168.38 | ⏳ Needs Human CTO | - |
+| 2.10 | Verify DNS propagation | ⏳ Blocked (DNS pending) | nslookup test |
 
 ---
 

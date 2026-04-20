@@ -20,6 +20,7 @@ Completed comprehensive research on nClouds AWS migration services and the AWS M
 - Documented their AWS Premier Tier Partner status and 28 AWS competencies
 - Identified key services: Migration, DevOps, SRE, Managed Services
 - Confirmed nClouds NPS score of 83 and 250+ DevOps implementations
+- Verified information is current as of April 2026
 
 ### 2. AWS MAP Program Research (Complete)
 
@@ -39,9 +40,21 @@ Completed comprehensive research on nClouds AWS migration services and the AWS M
   - AWS Database Migration Service (DMS)
   - AWS Application Migration Service
 
-### 4. Documentation Updates (Complete)
+### 4. AWS DMS Best Practices Research (Complete)
+
+- Researched AWS DMS migration patterns for Aurora PostgreSQL
+- Documented critical configuration requirements:
+  - Source database CDC settings
+  - DMS instance sizing guidelines
+  - Replication task configuration
+- Created comprehensive cutover procedure
+- Documented common issues and solutions (ODBC errors, FK constraints, sequences)
+- Added monitoring and validation strategies
+
+### 5. Documentation Updates (Complete)
 
 - Created: `docs/migration/NCLOUDS-AWS-MAP-RESEARCH.md`
+- Created: `docs/migration/AWS-DMS-MIGRATION-GUIDE.md` (NEW)
 - Pushed to GitHub: eventxgames-nclouds/migration-docs
 
 ---
@@ -97,6 +110,7 @@ None currently. Research phase complete.
 | Document | Status | Link |
 |----------|--------|------|
 | NCLOUDS-AWS-MAP-RESEARCH.md | NEW | [View](docs/migration/NCLOUDS-AWS-MAP-RESEARCH.md) |
+| AWS-DMS-MIGRATION-GUIDE.md | NEW | [View](docs/migration/AWS-DMS-MIGRATION-GUIDE.md) |
 
 ---
 

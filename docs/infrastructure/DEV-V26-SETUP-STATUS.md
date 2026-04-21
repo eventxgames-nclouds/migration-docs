@@ -1,7 +1,18 @@
 # Dev-V26 Subdomain Setup Status
 
-**Date:** 2026-04-16  
-**Status:** PREPARED (Waiting for DNS)
+**Date:** 2026-04-21 (Updated)  
+**Original Date:** 2026-04-16  
+**Status:** UPDATED - New Staging VPS Available
+
+---
+
+## New Staging VPS (dev-v26)
+
+| Attribute | Value |
+|-----------|-------|
+| **IP Address** | 172.188.98.210 |
+| **Purpose** | Dedicated staging/development environment |
+| **Status** | Active |
 
 ---
 
@@ -51,9 +62,11 @@ Add these A records in Azure DNS Zone (eventxgames.com):
 
 | Name | Type | TTL | Value |
 |------|------|-----|-------|
-| dev-app-v26 | A | 300 | 40.90.168.38 |
-| dev-api-v26 | A | 300 | 40.90.168.38 |
-| dev-ws-v26 | A | 300 | 40.90.168.38 |
+| dev-app-v26 | A | 300 | 172.188.98.210 |
+| dev-api-v26 | A | 300 | 172.188.98.210 |
+| dev-ws-v26 | A | 300 | 172.188.98.210 |
+
+> **Note:** Updated to point to new dedicated staging VPS (172.188.98.210) instead of production VPS.
 
 **Instructions:**
 1. Go to Azure Portal → DNS Zones → eventxgames.com
@@ -68,8 +81,8 @@ Add these A records in Azure DNS Zone (eventxgames.com):
 Run these commands to activate:
 
 ```bash
-# SSH to VPS
-ssh root@40.90.168.38
+# SSH to Staging VPS (dev-v26)
+ssh root@172.188.98.210
 
 # Restart Caddy to pick up new domains
 docker compose -f /root/src/docker-compose.yml restart caddy

@@ -1,0 +1,626 @@
+# EventXGames Kubernetes Network Policies
+# AWS Well-Architected Remediation - SEC-2
+# Date: 2026-04-21
+#
+# These policies implement a default-deny ingress model with explicit allow rules
+# for each workload based on required traffic patterns.
+#
+# Namespace: eventxgames
+# Workloads: api-worker, frontend-worker, game-worker, asset-worker, chat-worker, pgbouncer
+
+---
+# ==============================================================================
+# DEFAULT DENY POLICIES
+# ==============================================================================
+
+# Default deny all ingress traffic to the eventxgames namespace
+# All pods must have explicit allow rules to receive traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    security.eventxgames.com/policy-type: default-deny
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+
+---
+# Default deny all egress traffic (optional - uncomment for stricter security)
+# Note: This requires explicit egress rules for DNS, external services, etc.
+# apiVersion: networking.k8s.io/v1
+# kind: NetworkPolicy
+# metadata:
+#   name: default-deny-egress
+#   namespace: eventxgames
+#   labels:
+#     app.kubernetes.io/part-of: eventxgames
+#     security.eventxgames.com/policy-type: default-deny
+# spec:
+#   podSelector: {}
+#   policyTypes:
+#     - Egress
+
+---
+# ==============================================================================
+# DNS EGRESS (Required for all pods when egress deny is enabled)
+# ==============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    security.eventxgames.com/policy-type: infrastructure
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS queries to CoreDNS in kube-system
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# ==============================================================================
+# API WORKER POLICIES
+# ==============================================================================
+
+# Allow ingress to api-worker from ALB Ingress Controller
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-worker-ingress
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    app.kubernetes.io/component: api-worker
+    security.eventxgames.com/policy-type: allow-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: api-worker
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow traffic from AWS ALB Ingress Controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: aws-load-balancer-controller
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow health checks from kubelet
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/16  # VPC CIDR for node health checks
+      ports:
+        - protocol: TCP
+          port: 8080
+
+---
+# Allow api-worker to access internal services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-worker-egress
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    app.kubernetes.io/component: api-worker
+    security.eventxgames.com/policy-type: allow-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: api-worker
+  policyTypes:
+    - Egress
+  egress:
+    # Allow egress to pgbouncer for database access
+    - to:
+        - podSelector:
+            matchLabels:
+              app: pgbouncer
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow egress to ElastiCache Redis (cluster endpoint)
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8  # Internal VPC for Redis endpoints
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow egress to AWS services (Bedrock, S3, Secrets Manager)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# ==============================================================================
+# FRONTEND WORKER POLICIES
+# ==============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-worker-ingress
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    app.kubernetes.io/component: frontend-worker
+    security.eventxgames.com/policy-type: allow-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend-worker
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow traffic from AWS ALB Ingress Controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: aws-load-balancer-controller
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow health checks from kubelet
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/16
+      ports:
+        - protocol: TCP
+          port: 8080
+
+---
+# Allow frontend-worker to access api-worker (for server-side API calls if needed)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-worker-egress
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    app.kubernetes.io/component: frontend-worker
+    security.eventxgames.com/policy-type: allow-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend-worker
+  policyTypes:
+    - Egress
+  egress:
+    # Allow egress to api-worker for internal API calls
+    - to:
+        - podSelector:
+            matchLabels:
+              app: api-worker
+      ports:
+        - protocol: TCP
+          port: 8080
+
+---
+# ==============================================================================
+# GAME WORKER POLICIES
+# ==============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-game-worker-ingress
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    app.kubernetes.io/component: game-worker
+    security.eventxgames.com/policy-type: allow-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: game-worker
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow internal traffic from api-worker (game session management)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-worker
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow health checks from kubelet
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/16
+      ports:
+        - protocol: TCP
+          port: 8080
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-game-worker-egress
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    app.kubernetes.io/component: game-worker
+    security.eventxgames.com/policy-type: allow-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: game-worker
+  policyTypes:
+    - Egress
+  egress:
+    # Allow egress to pgbouncer for database access
+    - to:
+        - podSelector:
+            matchLabels:
+              app: pgbouncer
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow egress to ElastiCache Redis for game state
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow egress to AWS services (Bedrock for AI features)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# ==============================================================================
+# ASSET WORKER POLICIES
+# ==============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-asset-worker-ingress
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    app.kubernetes.io/component: asset-worker
+    security.eventxgames.com/policy-type: allow-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: asset-worker
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow internal traffic from api-worker (asset processing requests)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-worker
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow health checks from kubelet
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/16
+      ports:
+        - protocol: TCP
+          port: 8080
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-asset-worker-egress
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    app.kubernetes.io/component: asset-worker
+    security.eventxgames.com/policy-type: allow-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: asset-worker
+  policyTypes:
+    - Egress
+  egress:
+    # Allow egress to AWS S3 (via VPC endpoint or public)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# ==============================================================================
+# CHAT WORKER POLICIES
+# ==============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-chat-worker-ingress
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    app.kubernetes.io/component: chat-worker
+    security.eventxgames.com/policy-type: allow-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: chat-worker
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow traffic from AWS ALB Ingress Controller (HTTP and WebSocket)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: aws-load-balancer-controller
+      ports:
+        - protocol: TCP
+          port: 8080   # HTTP
+        - protocol: TCP
+          port: 8081   # WebSocket
+    # Allow internal traffic from api-worker
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-worker
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow health checks from kubelet
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/16
+      ports:
+        - protocol: TCP
+          port: 8080
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-chat-worker-egress
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    app.kubernetes.io/component: chat-worker
+    security.eventxgames.com/policy-type: allow-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: chat-worker
+  policyTypes:
+    - Egress
+  egress:
+    # Allow egress to pgbouncer for database access
+    - to:
+        - podSelector:
+            matchLabels:
+              app: pgbouncer
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow egress to ElastiCache Redis for pub/sub
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 6379
+
+---
+# ==============================================================================
+# PGBOUNCER POLICIES
+# ==============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-pgbouncer-ingress
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    app.kubernetes.io/component: pgbouncer
+    security.eventxgames.com/policy-type: allow-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: pgbouncer
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow ingress from api-worker
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-worker
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow ingress from game-worker
+    - from:
+        - podSelector:
+            matchLabels:
+              app: game-worker
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow ingress from chat-worker
+    - from:
+        - podSelector:
+            matchLabels:
+              app: chat-worker
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow health checks from kubelet
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/16
+      ports:
+        - protocol: TCP
+          port: 5432
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-pgbouncer-egress
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    app.kubernetes.io/component: pgbouncer
+    security.eventxgames.com/policy-type: allow-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: pgbouncer
+  policyTypes:
+    - Egress
+  egress:
+    # Allow egress to Aurora PostgreSQL (private subnet)
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8  # VPC CIDR containing Aurora endpoints
+      ports:
+        - protocol: TCP
+          port: 5432
+
+---
+# ==============================================================================
+# MONITORING AND OBSERVABILITY
+# ==============================================================================
+
+# Allow Prometheus to scrape metrics from all workloads
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    security.eventxgames.com/policy-type: monitoring
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow Prometheus from monitoring namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+          podSelector:
+            matchLabels:
+              app: prometheus
+      ports:
+        - protocol: TCP
+          port: 9090   # Metrics port
+        - protocol: TCP
+          port: 8080   # Application port (if metrics exposed there)
+
+---
+# Allow Fluent Bit to collect logs (if using sidecar pattern)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-fluentbit-egress
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    security.eventxgames.com/policy-type: monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: fluent-bit
+  policyTypes:
+    - Egress
+  egress:
+    # Allow egress to CloudWatch Logs
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# ==============================================================================
+# CROSS-NAMESPACE COMMUNICATION (System Services)
+# ==============================================================================
+
+# Allow kube-system pods to communicate with eventxgames namespace
+# (Required for CoreDNS, AWS LB Controller, etc.)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-kube-system-ingress
+  namespace: eventxgames
+  labels:
+    app.kubernetes.io/part-of: eventxgames
+    security.eventxgames.com/policy-type: infrastructure
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow all traffic from kube-system namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system

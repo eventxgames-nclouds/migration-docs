@@ -29,6 +29,8 @@ migration-docs/
 - [Architecture](docs/architecture/)
 - [QA Reports](docs/qa/)
 - [Migration Guides](docs/migration/)
+- [nClouds Research](docs/migration/NCLOUDS-AWS-MAP-RESEARCH.md)
+- [Research Summary (2026-04-21)](docs/migration/RESEARCH-SUMMARY-2026-04-21.md)
 
 ## Contact
 
@@ -36,4 +38,4 @@ migration-docs/
 - **Project**: Azure to AWS Migration
 
 ---
-*Last updated: 2026-04-16*
+*Last updated: 2026-04-21*

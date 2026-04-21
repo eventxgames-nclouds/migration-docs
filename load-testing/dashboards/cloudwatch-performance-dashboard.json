@@ -1,0 +1,535 @@
+{
+  "widgets": [
+    {
+      "type": "text",
+      "x": 0,
+      "y": 0,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "# EventXGames Performance Dashboard\n**Real-time monitoring for load testing and production performance**"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 1,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "API Response Time (P50/P95/P99)",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["EventXGames", "APILatency", "Percentile", "p50", { "stat": "Average", "color": "#2ca02c" }],
+          [".", ".", ".", "p95", { "stat": "Average", "color": "#ff7f0e" }],
+          [".", ".", ".", "p99", { "stat": "Average", "color": "#d62728" }]
+        ],
+        "period": 60,
+        "annotations": {
+          "horizontal": [
+            { "color": "#2ca02c", "label": "P50 Target (100ms)", "value": 100, "fill": "below" },
+            { "color": "#ff7f0e", "label": "P95 Target (500ms)", "value": 500 },
+            { "color": "#d62728", "label": "P99 Target (1000ms)", "value": 1000 }
+          ]
+        },
+        "yAxis": {
+          "left": { "min": 0, "max": 1500, "label": "Latency (ms)" }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 1,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Request Throughput (req/sec)",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", "app/eventxgames-alb/xxxxx", { "stat": "Sum", "period": 60, "id": "m1" }],
+          [{ "expression": "m1/60", "label": "Requests/Second", "color": "#1f77b4" }]
+        ],
+        "period": 60,
+        "yAxis": {
+          "left": { "min": 0, "label": "Requests/sec" }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 1,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Error Rates",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["AWS/ApplicationELB", "HTTPCode_Target_5XX_Count", "LoadBalancer", "app/eventxgames-alb/xxxxx", { "stat": "Sum", "color": "#d62728", "label": "5xx Errors" }],
+          [".", "HTTPCode_Target_4XX_Count", ".", ".", { "stat": "Sum", "color": "#ff7f0e", "label": "4xx Errors" }]
+        ],
+        "period": 60,
+        "annotations": {
+          "horizontal": [
+            { "color": "#d62728", "label": "5xx Alert Threshold", "value": 50 }
+          ]
+        }
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 7,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "## Database Performance"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 8,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Aurora - Database Connections",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["AWS/RDS", "DatabaseConnections", "DBClusterIdentifier", "eventxgames-aurora-cluster", { "stat": "Average", "label": "Writer" }],
+          [".", ".", "DBInstanceIdentifier", "eventxgames-reader-1", { "stat": "Average", "label": "Reader 1" }],
+          [".", ".", ".", "eventxgames-reader-2", { "stat": "Average", "label": "Reader 2" }]
+        ],
+        "period": 60,
+        "annotations": {
+          "horizontal": [
+            { "color": "#d62728", "label": "Connection Limit Warning (800)", "value": 800 }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 8,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Aurora - CPU & Memory",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["AWS/RDS", "CPUUtilization", "DBClusterIdentifier", "eventxgames-aurora-cluster", { "stat": "Average", "label": "CPU %", "color": "#1f77b4" }],
+          [".", "FreeableMemory", ".", ".", { "stat": "Average", "label": "Free Memory (GB)", "color": "#2ca02c", "yAxis": "right" }]
+        ],
+        "period": 60,
+        "yAxis": {
+          "left": { "min": 0, "max": 100, "label": "CPU %" },
+          "right": { "min": 0, "label": "Memory (bytes)" }
+        },
+        "annotations": {
+          "horizontal": [
+            { "color": "#ff7f0e", "label": "CPU Warning (70%)", "value": 70 },
+            { "color": "#d62728", "label": "CPU Critical (85%)", "value": 85 }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 8,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Aurora - IOPS & Latency",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["AWS/RDS", "ReadIOPS", "DBClusterIdentifier", "eventxgames-aurora-cluster", { "stat": "Average", "label": "Read IOPS" }],
+          [".", "WriteIOPS", ".", ".", { "stat": "Average", "label": "Write IOPS" }],
+          [".", "ReadLatency", ".", ".", { "stat": "Average", "label": "Read Latency (ms)", "yAxis": "right" }],
+          [".", "WriteLatency", ".", ".", { "stat": "Average", "label": "Write Latency (ms)", "yAxis": "right" }]
+        ],
+        "period": 60,
+        "yAxis": {
+          "left": { "min": 0, "label": "IOPS" },
+          "right": { "min": 0, "label": "Latency (ms)" }
+        }
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 14,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "## Cache Performance (ElastiCache Redis)"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 15,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Redis - Cache Hit Ratio",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          [{ "expression": "(m1/(m1+m2))*100", "label": "Cache Hit Ratio %", "color": "#2ca02c" }],
+          ["AWS/ElastiCache", "CacheHits", "CacheClusterId", "eventxgames-redis-0001-001", { "stat": "Sum", "id": "m1", "visible": false }],
+          [".", "CacheMisses", ".", ".", { "stat": "Sum", "id": "m2", "visible": false }]
+        ],
+        "period": 60,
+        "yAxis": {
+          "left": { "min": 0, "max": 100, "label": "Hit Ratio %" }
+        },
+        "annotations": {
+          "horizontal": [
+            { "color": "#ff7f0e", "label": "Target (90%)", "value": 90 },
+            { "color": "#d62728", "label": "Minimum (85%)", "value": 85 }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 15,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Redis - Memory & CPU",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["AWS/ElastiCache", "DatabaseMemoryUsagePercentage", "CacheClusterId", "eventxgames-redis-0001-001", { "stat": "Average", "label": "Memory %" }],
+          [".", "EngineCPUUtilization", ".", ".", { "stat": "Average", "label": "CPU %" }]
+        ],
+        "period": 60,
+        "yAxis": {
+          "left": { "min": 0, "max": 100 }
+        },
+        "annotations": {
+          "horizontal": [
+            { "color": "#ff7f0e", "label": "Warning (70%)", "value": 70 },
+            { "color": "#d62728", "label": "Critical (85%)", "value": 85 }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 15,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Redis - Operations & Latency",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["AWS/ElastiCache", "GetTypeCmds", "CacheClusterId", "eventxgames-redis-0001-001", { "stat": "Sum", "label": "GET Commands" }],
+          [".", "SetTypeCmds", ".", ".", { "stat": "Sum", "label": "SET Commands" }],
+          [".", "StringBasedCmdsLatency", ".", ".", { "stat": "Average", "label": "Latency (ms)", "yAxis": "right" }]
+        ],
+        "period": 60,
+        "yAxis": {
+          "left": { "min": 0, "label": "Operations" },
+          "right": { "min": 0, "max": 10, "label": "Latency (ms)" }
+        }
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 21,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "## CDN & Asset Delivery (CloudFront)"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 22,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "CloudFront - Request Volume",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["AWS/CloudFront", "Requests", "DistributionId", "EXXXXXXXXXX", "Region", "Global", { "stat": "Sum", "label": "Total Requests" }]
+        ],
+        "period": 60
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 22,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "CloudFront - Cache Hit Ratio",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["AWS/CloudFront", "CacheHitRate", "DistributionId", "EXXXXXXXXXX", "Region", "Global", { "stat": "Average", "label": "Cache Hit Rate %" }]
+        ],
+        "period": 60,
+        "yAxis": {
+          "left": { "min": 0, "max": 100 }
+        },
+        "annotations": {
+          "horizontal": [
+            { "color": "#2ca02c", "label": "Target (85%)", "value": 85 },
+            { "color": "#ff7f0e", "label": "Minimum (75%)", "value": 75 }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 22,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "CloudFront - Error Rates",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["AWS/CloudFront", "4xxErrorRate", "DistributionId", "EXXXXXXXXXX", "Region", "Global", { "stat": "Average", "label": "4xx Error Rate %", "color": "#ff7f0e" }],
+          [".", "5xxErrorRate", ".", ".", ".", ".", { "stat": "Average", "label": "5xx Error Rate %", "color": "#d62728" }],
+          [".", "TotalErrorRate", ".", ".", ".", ".", { "stat": "Average", "label": "Total Error Rate %", "color": "#9467bd" }]
+        ],
+        "period": 60,
+        "yAxis": {
+          "left": { "min": 0, "max": 5 }
+        }
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 28,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "## EKS Cluster Health"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 29,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "EKS - Pod CPU Utilization by Deployment",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["ContainerInsights", "pod_cpu_utilization", "ClusterName", "eventxgames", "Namespace", "eventxgames", "PodName", "api-worker", { "stat": "Average", "label": "API Worker" }],
+          [".", ".", ".", ".", ".", ".", ".", "game-worker", { "stat": "Average", "label": "Game Worker" }],
+          [".", ".", ".", ".", ".", ".", ".", "chat-worker", { "stat": "Average", "label": "Chat Worker" }],
+          [".", ".", ".", ".", ".", ".", ".", "asset-worker", { "stat": "Average", "label": "Asset Worker" }],
+          [".", ".", ".", ".", ".", ".", ".", "frontend-worker", { "stat": "Average", "label": "Frontend Worker" }]
+        ],
+        "period": 60,
+        "yAxis": {
+          "left": { "min": 0, "max": 100 }
+        },
+        "annotations": {
+          "horizontal": [
+            { "color": "#ff7f0e", "label": "HPA Target (70%)", "value": 70 },
+            { "color": "#d62728", "label": "Critical (90%)", "value": 90 }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 29,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "EKS - Pod Memory Utilization by Deployment",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["ContainerInsights", "pod_memory_utilization", "ClusterName", "eventxgames", "Namespace", "eventxgames", "PodName", "api-worker", { "stat": "Average", "label": "API Worker" }],
+          [".", ".", ".", ".", ".", ".", ".", "game-worker", { "stat": "Average", "label": "Game Worker" }],
+          [".", ".", ".", ".", ".", ".", ".", "chat-worker", { "stat": "Average", "label": "Chat Worker" }],
+          [".", ".", ".", ".", ".", ".", ".", "asset-worker", { "stat": "Average", "label": "Asset Worker" }],
+          [".", ".", ".", ".", ".", ".", ".", "frontend-worker", { "stat": "Average", "label": "Frontend Worker" }]
+        ],
+        "period": 60,
+        "yAxis": {
+          "left": { "min": 0, "max": 100 }
+        },
+        "annotations": {
+          "horizontal": [
+            { "color": "#ff7f0e", "label": "Warning (75%)", "value": 75 },
+            { "color": "#d62728", "label": "Critical (90%)", "value": 90 }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 35,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "EKS - Running Pod Count",
+        "view": "timeSeries",
+        "stacked": true,
+        "region": "us-east-1",
+        "metrics": [
+          ["ContainerInsights", "pod_number_of_running_pods", "ClusterName", "eventxgames", "Namespace", "eventxgames", { "stat": "Average" }]
+        ],
+        "period": 60
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 35,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "EKS - Node CPU & Memory",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["ContainerInsights", "node_cpu_utilization", "ClusterName", "eventxgames", { "stat": "Average", "label": "Node CPU %" }],
+          [".", "node_memory_utilization", ".", ".", { "stat": "Average", "label": "Node Memory %" }]
+        ],
+        "period": 60,
+        "yAxis": {
+          "left": { "min": 0, "max": 100 }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 35,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "EKS - Network I/O",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["ContainerInsights", "pod_network_rx_bytes", "ClusterName", "eventxgames", "Namespace", "eventxgames", { "stat": "Sum", "label": "RX Bytes" }],
+          [".", "pod_network_tx_bytes", ".", ".", ".", ".", { "stat": "Sum", "label": "TX Bytes" }]
+        ],
+        "period": 60
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 41,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "## WebSocket Metrics"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 42,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "WebSocket - Active Connections",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["EventXGames", "WebSocketConnections", "Service", "chat-worker", { "stat": "Maximum", "label": "Active Connections" }]
+        ],
+        "period": 60,
+        "annotations": {
+          "horizontal": [
+            { "color": "#2ca02c", "label": "Baseline (50K)", "value": 50000 },
+            { "color": "#ff7f0e", "label": "Peak Target (100K)", "value": 100000 }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 42,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "WebSocket - Message Throughput",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["EventXGames", "WebSocketMessagesReceived", "Service", "chat-worker", { "stat": "Sum", "label": "Messages Received" }],
+          [".", "WebSocketMessagesSent", ".", ".", { "stat": "Sum", "label": "Messages Sent" }]
+        ],
+        "period": 60
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 42,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "WebSocket - Latency & Errors",
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "metrics": [
+          ["EventXGames", "WebSocketMessageLatency", "Service", "chat-worker", { "stat": "p95", "label": "Message Latency P95 (ms)" }],
+          [".", "WebSocketErrors", ".", ".", { "stat": "Sum", "label": "Errors", "yAxis": "right" }]
+        ],
+        "period": 60,
+        "yAxis": {
+          "left": { "min": 0, "max": 200, "label": "Latency (ms)" },
+          "right": { "min": 0, "label": "Error Count" }
+        }
+      }
+    }
+  ]
+}
